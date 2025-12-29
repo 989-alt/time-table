@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+/* Custom utilities for the scheduler application */
+:root {
+  --primary: #4f46e5;
+  --primary-light: #818cf8;
+  --secondary: #f97316;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+}
+
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Drag and drop styles */
+.drop-target {
+  @apply border-4 border-red-500 border-dashed;
+}
+
+.dragging {
+  @apply opacity-50 scale-95;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded hover:bg-gray-400;
+}
+
+/* Animation for hover effects */
+.card-hover {
+  @apply transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5;
+}
+
+/* Subject color classes */
+.subject-sports {
+  @apply bg-orange-100 border-orange-300 text-orange-800;
+}
+
+.subject-science {
+  @apply bg-green-100 border-green-300 text-green-800;
+}
+
+.subject-english {
+  @apply bg-blue-100 border-blue-300 text-blue-800;
+}
+
+.subject-music {
+  @apply bg-purple-100 border-purple-300 text-purple-800;
+}
+
+.subject-practical {
+  @apply bg-yellow-100 border-yellow-300 text-yellow-800;
+}
+
+.subject-default {
+  @apply bg-gray-100 border-gray-300 text-gray-800;
+}
