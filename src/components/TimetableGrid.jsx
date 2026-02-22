@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DAYS, PERIODS, getSubjectColorClass } from '../utils/scheduler';
+import { DAYS, PERIODS, getSubjectColorClass, CONFLICT_TYPES } from '../utils/scheduler';
 
 export default function TimetableGrid({
     assignments,
@@ -64,31 +64,97 @@ export default function TimetableGrid({
         return period > dailyMaxHours[dayIndex];
     };
 
-    // Check for room conflict when dragging (real-time conflict detection)
-    const checkRoomConflict = (day, period, draggedAssignment) => {
+    // Check for all conflict types when dragging (real-time conflict detection)
+    const checkAllConflicts = (day, period, draggedAssignment) => {
         if (!draggedAssignment) return null;
 
-        // Find any assignments in this slot that would conflict
-        // In Room View: Check if another class is using the same room at this time
-        // In Grade View: Check if another class is using the dragged item's room at this time
+        const conflicts = [];
 
+        // 1. Room conflict (same room, same time, different class)
         const targetRoom = draggedAssignment.moduleLocation;
+        if (targetRoom && targetRoom !== '교실') {
+            const roomConflict = assignments.find(a =>
+                a.id !== draggedAssignment.id &&
+                a.moduleLocation === targetRoom &&
+                a.day === day &&
+                a.period === period
+            );
 
-        const conflictingAssignment = assignments.find(a =>
-            a.id !== draggedAssignment.id &&
-            a.moduleLocation === targetRoom &&
-            a.day === day &&
-            a.period === period
-        );
-
-        if (conflictingAssignment) {
-            return {
-                gradeClass: formatGradeClass(conflictingAssignment),
-                room: targetRoom,
-                subject: conflictingAssignment.subjectName
-            };
+            if (roomConflict) {
+                conflicts.push({
+                    type: CONFLICT_TYPES.ROOM_OVERLAP,
+                    gradeClass: formatGradeClass(roomConflict),
+                    room: targetRoom,
+                    subject: roomConflict.subjectName,
+                    message: `${formatGradeClass(roomConflict)}이(가) ${targetRoom} 사용 중`
+                });
+            }
         }
 
+        // 2. Class conflict (same class already has assignment at this time)
+        if (!filterRoom) {
+            const classConflict = assignments.find(a =>
+                a.id !== draggedAssignment.id &&
+                a.gradeId === draggedAssignment.gradeId &&
+                a.classId === draggedAssignment.classId &&
+                a.day === day &&
+                a.period === period
+            );
+
+            if (classConflict) {
+                conflicts.push({
+                    type: CONFLICT_TYPES.CLASS_OVERLAP,
+                    subject: classConflict.subjectName,
+                    message: `이미 ${classConflict.subjectName} 배정됨`
+                });
+            }
+        }
+
+        // 3. Teacher conflict (same teacher at same time)
+        if (draggedAssignment.teacherId) {
+            const teacherConflict = assignments.find(a =>
+                a.id !== draggedAssignment.id &&
+                a.teacherId === draggedAssignment.teacherId &&
+                a.day === day &&
+                a.period === period
+            );
+
+            if (teacherConflict) {
+                conflicts.push({
+                    type: CONFLICT_TYPES.TEACHER_OVERLAP,
+                    gradeClass: formatGradeClass(teacherConflict),
+                    teacher: draggedAssignment.teacherName,
+                    message: `${draggedAssignment.teacherName || '교사'} 시간 중복`
+                });
+            }
+        }
+
+        // 4. Daily max exceeded
+        if (dailyMaxHours) {
+            const dayIndex = DAYS.indexOf(day);
+            const maxPeriods = dailyMaxHours[dayIndex] || 6;
+            if (period > maxPeriods) {
+                conflicts.push({
+                    type: CONFLICT_TYPES.DAILY_MAX_EXCEEDED,
+                    message: `최대 ${maxPeriods}교시 초과`
+                });
+            }
+        }
+
+        return conflicts.length > 0 ? conflicts : null;
+    };
+
+    // Legacy function for backward compatibility
+    const checkRoomConflict = (day, period, draggedAssignment) => {
+        const conflicts = checkAllConflicts(day, period, draggedAssignment);
+        if (conflicts && conflicts.length > 0) {
+            const roomConflict = conflicts.find(c => c.type === CONFLICT_TYPES.ROOM_OVERLAP);
+            if (roomConflict) {
+                return roomConflict;
+            }
+            // Return first conflict if no room conflict
+            return conflicts[0];
+        }
         return null;
     };
 
@@ -218,48 +284,126 @@ export default function TimetableGrid({
                                         onDragLeave={handleDragLeave}
                                         onDrop={(e) => !isDisabled && handleDrop(e, day, period)}
                                     >
-                                        {/* Real-time Conflict Warning Overlay */}
+                                        {/* Real-time Conflict Warning Overlay - Enhanced */}
                                         {showConflictOverlay && (
-                                            <div className="absolute inset-0 bg-red-500/80 z-20 flex items-center justify-center p-1">
+                                            <div className={`
+                                                absolute inset-0 z-20 flex items-center justify-center p-1
+                                                ${hoverConflict.type === CONFLICT_TYPES.ROOM_OVERLAP ? 'bg-red-500/85' : ''}
+                                                ${hoverConflict.type === CONFLICT_TYPES.CLASS_OVERLAP ? 'bg-orange-500/85' : ''}
+                                                ${hoverConflict.type === CONFLICT_TYPES.TEACHER_OVERLAP ? 'bg-purple-500/85' : ''}
+                                                ${hoverConflict.type === CONFLICT_TYPES.DAILY_MAX_EXCEEDED ? 'bg-amber-500/85' : ''}
+                                                ${!hoverConflict.type ? 'bg-red-500/85' : ''}
+                                            `}>
                                                 <span className="text-white text-xs font-bold text-center leading-tight">
-                                                    ⚠️ {hoverConflict.gradeClass}이(가)<br />
-                                                    {hoverConflict.room}을 사용 중!
+                                                    ⚠️ {hoverConflict.message || (
+                                                        hoverConflict.gradeClass
+                                                            ? `${hoverConflict.gradeClass}이(가) ${hoverConflict.room}을 사용 중!`
+                                                            : '충돌 발생'
+                                                    )}
                                                 </span>
                                             </div>
                                         )}
 
                                         {cellAssignments.length > 0 ? (
-                                            <div className="flex flex-col gap-0.5">
-                                                {cellAssignments.map(assignment => (
-                                                    <div
-                                                        key={assignment.id}
-                                                        draggable={true} // ENABLED for both views
-                                                        onDragStart={(e) => handleDragStart(e, assignment)}
-                                                        onDragEnd={handleDragEnd}
-                                                        className={`
-                                                            group px-2 py-1 rounded text-xs font-medium cursor-move relative
-                                                            transition-all hover:scale-105 hover:shadow-md
-                                                            ${getSubjectColorClass(assignment.moduleLocation)}
-                                                            ${draggedItem?.id === assignment.id ? 'opacity-50 scale-95' : ''}
-                                                            ${isConflict ? 'ring-2 ring-red-500' : 'border'}
-                                                            ${assignment.isBlockPart ? 'border-l-4 border-l-indigo-500' : ''}
-                                                        `}
-                                                    >
-                                                        <div className="font-semibold truncate">
-                                                            {filterRoom ? formatGradeClass(assignment) : assignment.subjectName}
-                                                        </div>
-                                                        <div className="text-[10px] opacity-75 truncate">
-                                                            {filterRoom ? assignment.subjectName : assignment.moduleLocation}
-                                                        </div>
-                                                        {/* Delete button - visible on both views */}
-                                                        <button
-                                                            onClick={(e) => handleDelete(e, assignment.id)}
-                                                            className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow-sm hover:bg-red-600"
+                                            <div className={`
+                                                flex flex-col gap-0.5 h-full
+                                                ${cellAssignments.some(a => a.halfPeriodSlot) ? 'grid grid-rows-2' : ''}
+                                            `}>
+                                                {/* Render half-period cells in correct order */}
+                                                {cellAssignments.some(a => a.halfPeriodSlot) ? (
+                                                    <>
+                                                        {/* First half */}
+                                                        {cellAssignments.filter(a => a.halfPeriodSlot === 'first' || (!a.halfPeriodSlot && a.duration === 1)).map(assignment => (
+                                                            <div
+                                                                key={assignment.id}
+                                                                draggable={true}
+                                                                onDragStart={(e) => handleDragStart(e, assignment)}
+                                                                onDragEnd={handleDragEnd}
+                                                                className={`
+                                                                    group px-1 py-0.5 rounded text-xs font-medium cursor-move relative
+                                                                    transition-all hover:scale-105 hover:shadow-md
+                                                                    ${getSubjectColorClass(assignment.moduleLocation)}
+                                                                    ${draggedItem?.id === assignment.id ? 'opacity-50 scale-95' : ''}
+                                                                    ${isConflict ? 'ring-2 ring-red-500' : 'border'}
+                                                                    ${assignment.halfPeriodSlot ? 'border-dashed' : ''}
+                                                                `}
+                                                            >
+                                                                <div className="font-semibold truncate flex items-center gap-0.5 text-[10px]">
+                                                                    {assignment.halfPeriodSlot && <span className="text-[8px]">½</span>}
+                                                                    {filterRoom ? formatGradeClass(assignment) : assignment.subjectName}
+                                                                </div>
+                                                                <button
+                                                                    onClick={(e) => handleDelete(e, assignment.id)}
+                                                                    className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white rounded-full text-[8px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                                                >
+                                                                    ×
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                        {/* Second half */}
+                                                        {cellAssignments.filter(a => a.halfPeriodSlot === 'second').map(assignment => (
+                                                            <div
+                                                                key={assignment.id}
+                                                                draggable={true}
+                                                                onDragStart={(e) => handleDragStart(e, assignment)}
+                                                                onDragEnd={handleDragEnd}
+                                                                className={`
+                                                                    group px-1 py-0.5 rounded text-xs font-medium cursor-move relative
+                                                                    transition-all hover:scale-105 hover:shadow-md
+                                                                    ${getSubjectColorClass(assignment.moduleLocation)}
+                                                                    ${draggedItem?.id === assignment.id ? 'opacity-50 scale-95' : ''}
+                                                                    ${isConflict ? 'ring-2 ring-red-500' : 'border'}
+                                                                    border-dashed
+                                                                `}
+                                                            >
+                                                                <div className="font-semibold truncate flex items-center gap-0.5 text-[10px]">
+                                                                    <span className="text-[8px]">½</span>
+                                                                    {filterRoom ? formatGradeClass(assignment) : assignment.subjectName}
+                                                                </div>
+                                                                <button
+                                                                    onClick={(e) => handleDelete(e, assignment.id)}
+                                                                    className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white rounded-full text-[8px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                                                >
+                                                                    ×
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </>
+                                                ) : (
+                                                    /* Normal full-period rendering */
+                                                    cellAssignments.map(assignment => (
+                                                        <div
+                                                            key={assignment.id}
+                                                            draggable={true}
+                                                            onDragStart={(e) => handleDragStart(e, assignment)}
+                                                            onDragEnd={handleDragEnd}
+                                                            className={`
+                                                                group px-2 py-1 rounded text-xs font-medium cursor-move relative
+                                                                transition-all hover:scale-105 hover:shadow-md
+                                                                ${getSubjectColorClass(assignment.moduleLocation)}
+                                                                ${draggedItem?.id === assignment.id ? 'opacity-50 scale-95' : ''}
+                                                                ${isConflict ? 'ring-2 ring-red-500' : 'border'}
+                                                                ${assignment.isBlockPart ? 'border-l-4 border-l-indigo-500' : ''}
+                                                            `}
                                                         >
-                                                            ×
-                                                        </button>
-                                                    </div>
-                                                ))}
+                                                            <div className="font-semibold truncate flex items-center gap-0.5">
+                                                                {assignment.moduleLocation === '교실' && (
+                                                                    <span title="교실 수업">🏫</span>
+                                                                )}
+                                                                {filterRoom ? formatGradeClass(assignment) : assignment.subjectName}
+                                                            </div>
+                                                            <div className="text-[10px] opacity-75 truncate">
+                                                                {filterRoom ? assignment.subjectName : assignment.moduleLocation}
+                                                            </div>
+                                                            <button
+                                                                onClick={(e) => handleDelete(e, assignment.id)}
+                                                                className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow-sm hover:bg-red-600"
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    ))
+                                                )}
                                             </div>
                                         ) : isDisabled ? (
                                             <span className="text-gray-300 text-xs">-</span>

@@ -22,11 +22,16 @@ export function exportToExcel(assignments, grades, specialRooms) {
             PERIODS.forEach(period => {
                 const row = [`${period}교시`];
                 DAYS.forEach(day => {
-                    const assignment = classAssignments.find(
+                    const periodAssignments = classAssignments.filter(
                         a => a.day === day && a.period === period
                     );
-                    if (assignment) {
-                        row.push(`${assignment.subjectName}\n(${assignment.moduleLocation})`);
+                    if (periodAssignments.length > 0) {
+                        // Handle multiple assignments (half-periods) in same cell
+                        const cellContent = periodAssignments.map(assignment => {
+                            const halfMark = assignment.halfPeriodSlot ? '(0.5)' : '';
+                            return `${assignment.subjectName}${halfMark}\n(${assignment.moduleLocation})`;
+                        }).join('\n---\n');
+                        row.push(cellContent);
                     } else {
                         row.push('');
                     }
@@ -52,7 +57,8 @@ export function exportToExcel(assignments, grades, specialRooms) {
 
     // Create room summary sheet
     specialRooms.forEach(room => {
-        const roomAssignments = assignments.filter(a => a.moduleLocation === room);
+        const roomName = typeof room === 'string' ? room : room.name;
+        const roomAssignments = assignments.filter(a => a.moduleLocation === roomName);
         if (roomAssignments.length === 0) return;
 
         const data = [['교시', ...DAYS]];
@@ -64,9 +70,11 @@ export function exportToExcel(assignments, grades, specialRooms) {
                     a => a.day === day && a.period === period
                 );
                 if (dayAssignments.length > 0) {
-                    row.push(dayAssignments.map(a =>
-                        `${a.gradeId}-${a.classId} ${a.subjectName}`
-                    ).join('\n'));
+                    row.push(dayAssignments.map(a => {
+                        const halfMark = a.halfPeriodSlot ? '(0.5)' : '';
+                        const gradeName = a.gradeName ? a.gradeName.replace('학년', '') : a.gradeId;
+                        return `${gradeName}-${a.classId} ${a.subjectName}${halfMark}`;
+                    }).join('\n'));
                 } else {
                     row.push('');
                 }
@@ -80,7 +88,7 @@ export function exportToExcel(assignments, grades, specialRooms) {
             ...DAYS.map(() => ({ wch: 20 }))
         ];
 
-        XLSX.utils.book_append_sheet(workbook, worksheet, room);
+        XLSX.utils.book_append_sheet(workbook, worksheet, roomName);
     });
 
     // Generate and download

@@ -17,7 +17,17 @@ const generateInitialGrades = () => [
   { id: uuidv4(), name: '6학년', classCount: 3, dailyMaxHours: [6, 6, 6, 6, 6] },
 ];
 
-const initialSpecialRooms = ['체육관', '운동장', '영어실', '과학실', '음악실'];
+// Special rooms now have capacity property for shared room support
+const initialSpecialRooms = [
+  { id: uuidv4(), name: '체육관', capacity: 1 },
+  { id: uuidv4(), name: '운동장', capacity: 2 },  // Outdoor can have 2 classes
+  { id: uuidv4(), name: '영어실', capacity: 1 },
+  { id: uuidv4(), name: '과학실', capacity: 1 },
+  { id: uuidv4(), name: '음악실', capacity: 2 }   // Large room, 2 classes
+];
+
+// Helper to get room name (supports both string and object formats)
+const getRoomName = (room) => typeof room === 'string' ? room : room.name;
 
 export default function App() {
   // Tab state
@@ -28,6 +38,7 @@ export default function App() {
   const [specialRooms, setSpecialRooms] = useState(initialSpecialRooms);
   const [subjects, setSubjects] = useState([]);
   const [assignments, setAssignments] = useState([]);
+  const [teachers, setTeachers] = useState([]);  // Teacher management for Phase 5
 
   // Reset all data
   const handleReset = () => {
@@ -36,6 +47,7 @@ export default function App() {
       setSpecialRooms(initialSpecialRooms);
       setSubjects([]);
       setAssignments([]);
+      setTeachers([]);
     }
   };
 
@@ -126,6 +138,8 @@ export default function App() {
               setSpecialRooms={setSpecialRooms}
               assignments={assignments}
               setAssignments={setAssignments}
+              teachers={teachers}
+              setTeachers={setTeachers}
             />
           )}
 
@@ -135,6 +149,8 @@ export default function App() {
               subjects={subjects}
               assignments={assignments}
               setAssignments={setAssignments}
+              specialRooms={specialRooms}
+              teachers={teachers}
             />
           )}
 

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Play, CheckCircle, AlertTriangle, Trash2, Sun } from 'lucide-react';
 import TimetableGrid from './TimetableGrid';
-import { runAutoScheduler, validateAssignments } from '../utils/scheduler';
+import { runAutoScheduler, validateAssignments, CONFLICT_TYPES, CONFLICT_LABELS } from '../utils/scheduler';
 
 export default function GradeViewTab({
     grades,
     subjects,
     assignments,
-    setAssignments
+    setAssignments,
+    specialRooms = [],
+    teachers = []
 }) {
     // Use first available grade as default
     const [selectedGradeId, setSelectedGradeId] = useState(grades[0]?.id || null);
@@ -71,7 +73,7 @@ export default function GradeViewTab({
         // Clear existing assignments for this grade
         const otherAssignments = assignments.filter(a => a.gradeId !== selectedGradeId);
 
-        const result = runAutoScheduler(gradeSubjects, grades, otherAssignments, morningPriority);
+        const result = runAutoScheduler(gradeSubjects, grades, otherAssignments, morningPriority, specialRooms, teachers);
         setAssignments(result.assignments);
         setShowResult(result);
         setConflicts([]);
@@ -88,7 +90,7 @@ export default function GradeViewTab({
             return;
         }
 
-        const result = runAutoScheduler(allSubjects, grades, [], morningPriority);
+        const result = runAutoScheduler(allSubjects, grades, [], morningPriority, specialRooms, teachers);
         setAssignments(result.assignments);
         setShowResult(result);
         setConflicts([]);
@@ -98,7 +100,7 @@ export default function GradeViewTab({
 
     // Validate current timetable
     const handleValidate = () => {
-        const foundConflicts = validateAssignments(assignments);
+        const foundConflicts = validateAssignments(assignments, grades, specialRooms);
         setConflicts(foundConflicts);
 
         if (foundConflicts.length === 0) {
@@ -306,21 +308,56 @@ export default function GradeViewTab({
                     </div>
                 )}
 
-                {/* Conflict List */}
+                {/* Conflict Panel - Enhanced UI with click-to-navigate */}
                 {conflicts.length > 0 && (
                     <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
-                        <h4 className="font-semibold text-red-800 mb-2 flex items-center gap-2">
+                        <h4 className="font-semibold text-red-800 mb-3 flex items-center gap-2">
                             <AlertTriangle className="w-5 h-5" />
                             발견된 충돌 ({conflicts.length}건)
                         </h4>
-                        <ul className="space-y-1 text-sm text-red-700 max-h-40 overflow-y-auto">
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
                             {conflicts.map((conflict, idx) => (
-                                <li key={idx} className="flex items-start gap-2">
-                                    <span className="font-medium shrink-0">[{conflict.type}]</span>
-                                    <span>{conflict.message}</span>
-                                </li>
+                                <div
+                                    key={idx}
+                                    onClick={() => {
+                                        // Navigate to the conflicting cell
+                                        if (conflict.gradeId && conflict.classId) {
+                                            setSelectedGradeId(conflict.gradeId);
+                                            setSelectedClass(conflict.classId);
+                                        }
+                                    }}
+                                    className={`
+                                        p-2 rounded-lg border text-sm cursor-pointer transition-all hover:shadow-md
+                                        ${conflict.type === CONFLICT_TYPES.CLASS_OVERLAP ? 'bg-red-100 border-red-300' : ''}
+                                        ${conflict.type === CONFLICT_TYPES.ROOM_OVERLAP ? 'bg-orange-100 border-orange-300' : ''}
+                                        ${conflict.type === CONFLICT_TYPES.TEACHER_OVERLAP ? 'bg-purple-100 border-purple-300' : ''}
+                                        ${conflict.type === CONFLICT_TYPES.ROOM_CAPACITY_EXCEEDED ? 'bg-yellow-100 border-yellow-300' : ''}
+                                        ${conflict.type === CONFLICT_TYPES.DAILY_MAX_EXCEEDED ? 'bg-amber-100 border-amber-300' : ''}
+                                        ${conflict.type === CONFLICT_TYPES.SAME_SUBJECT_SAME_DAY ? 'bg-pink-100 border-pink-300' : ''}
+                                    `}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <span className={`
+                                            px-2 py-0.5 rounded-full text-xs font-semibold shrink-0
+                                            ${conflict.type === CONFLICT_TYPES.CLASS_OVERLAP ? 'bg-red-200 text-red-800' : ''}
+                                            ${conflict.type === CONFLICT_TYPES.ROOM_OVERLAP ? 'bg-orange-200 text-orange-800' : ''}
+                                            ${conflict.type === CONFLICT_TYPES.TEACHER_OVERLAP ? 'bg-purple-200 text-purple-800' : ''}
+                                            ${conflict.type === CONFLICT_TYPES.ROOM_CAPACITY_EXCEEDED ? 'bg-yellow-200 text-yellow-800' : ''}
+                                            ${conflict.type === CONFLICT_TYPES.DAILY_MAX_EXCEEDED ? 'bg-amber-200 text-amber-800' : ''}
+                                            ${conflict.type === CONFLICT_TYPES.SAME_SUBJECT_SAME_DAY ? 'bg-pink-200 text-pink-800' : ''}
+                                        `}>
+                                            {CONFLICT_LABELS[conflict.type] || conflict.type}
+                                        </span>
+                                        <span className="text-gray-700">{conflict.message}</span>
+                                    </div>
+                                    {conflict.gradeId && (
+                                        <div className="mt-1 text-xs text-gray-500 flex items-center gap-1">
+                                            <span>👆 클릭하여 이동</span>
+                                        </div>
+                                    )}
+                                </div>
                             ))}
-                        </ul>
+                        </div>
                     </div>
                 )}
             </div>

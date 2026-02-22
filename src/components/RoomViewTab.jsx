@@ -8,11 +8,18 @@ export default function RoomViewTab({
     setAssignments,
     grades = [] // Accept grades for formatting
 }) {
-    const [selectedRoom, setSelectedRoom] = useState(specialRooms[0] || '');
+    // Helper to get room name (supports both string and object formats)
+    const getRoomName = (room) => typeof room === 'string' ? room : room.name;
+    const getRoomCapacity = (room) => typeof room === 'string' ? 1 : (room.capacity || 1);
+
+    const [selectedRoom, setSelectedRoom] = useState(
+        specialRooms[0] ? getRoomName(specialRooms[0]) : ''
+    );
 
     // Count assignments per room
     const getRoomCount = (room) => {
-        return assignments.filter(a => a.moduleLocation === room).length;
+        const roomName = getRoomName(room);
+        return assignments.filter(a => a.moduleLocation === roomName).length;
     };
 
     return (
@@ -25,30 +32,42 @@ export default function RoomViewTab({
                 </h3>
 
                 <div className="flex flex-wrap gap-2">
-                    {specialRooms.map(room => (
-                        <button
-                            key={room}
-                            onClick={() => setSelectedRoom(room)}
-                            className={`
-                                px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2
-                                ${selectedRoom === room
-                                    ? 'bg-indigo-500 text-white shadow-md'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }
-                            `}
-                        >
-                            {room}
-                            <span className={`
-                                px-2 py-0.5 rounded-full text-xs
-                                ${selectedRoom === room
-                                    ? 'bg-indigo-400 text-white'
-                                    : 'bg-gray-200 text-gray-600'
-                                }
-                            `}>
-                                {getRoomCount(room)}
-                            </span>
-                        </button>
-                    ))}
+                    {specialRooms.map(room => {
+                        const roomName = getRoomName(room);
+                        const roomCapacity = getRoomCapacity(room);
+                        return (
+                            <button
+                                key={roomName}
+                                onClick={() => setSelectedRoom(roomName)}
+                                className={`
+                                    px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2
+                                    ${selectedRoom === roomName
+                                        ? 'bg-indigo-500 text-white shadow-md'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }
+                                `}
+                            >
+                                {roomName}
+                                {roomCapacity > 1 && (
+                                    <span className={`
+                                        text-xs
+                                        ${selectedRoom === roomName ? 'text-indigo-200' : 'text-gray-400'}
+                                    `}>
+                                        (정원 {roomCapacity})
+                                    </span>
+                                )}
+                                <span className={`
+                                    px-2 py-0.5 rounded-full text-xs
+                                    ${selectedRoom === roomName
+                                        ? 'bg-indigo-400 text-white'
+                                        : 'bg-gray-200 text-gray-600'
+                                    }
+                                `}>
+                                    {getRoomCount(room)}
+                                </span>
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {specialRooms.length === 0 && (

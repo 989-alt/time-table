@@ -12,7 +12,9 @@ export default function SettingsTab({
     specialRooms,
     setSpecialRooms,
     assignments,
-    setAssignments
+    setAssignments,
+    teachers = [],
+    setTeachers = () => {}
 }) {
     // Removed expandedGrade state - all grade cards are now always expanded
     const [newRoom, setNewRoom] = useState('');
@@ -85,15 +87,22 @@ export default function SettingsTab({
         setGrades(prev => [...prev, newGrade]);
     };
 
+    // Helper to get room name (supports both string and object formats)
+    const getRoomName = (room) => typeof room === 'string' ? room : room.name;
+    const getRoomCapacity = (room) => typeof room === 'string' ? 1 : (room.capacity || 1);
+    const getRoomId = (room) => typeof room === 'string' ? room : room.id;
+
     // Add special rooms - supports batch input with space separation
     const addSpecialRoom = () => {
         const input = newRoom.trim();
         if (!input) return;
 
         // Split by spaces and filter unique, non-empty tokens
+        const existingNames = specialRooms.map(getRoomName);
         const newRooms = input.split(' ')
             .map(r => r.trim())
-            .filter(r => r && !specialRooms.includes(r));
+            .filter(r => r && !existingNames.includes(r))
+            .map(name => ({ id: uuidv4(), name, capacity: 1 }));
 
         if (newRooms.length > 0) {
             setSpecialRooms(prev => [...prev, ...newRooms]);
@@ -103,21 +112,40 @@ export default function SettingsTab({
 
     // Remove special room
     const removeSpecialRoom = (room) => {
-        setSpecialRooms(prev => prev.filter(r => r !== room));
+        const roomId = getRoomId(room);
+        setSpecialRooms(prev => prev.filter(r => getRoomId(r) !== roomId));
+    };
+
+    // Update room capacity
+    const updateRoomCapacity = (room, capacity) => {
+        const roomId = getRoomId(room);
+        setSpecialRooms(prev => prev.map(r => {
+            if (getRoomId(r) === roomId) {
+                // Convert string to object if needed
+                if (typeof r === 'string') {
+                    return { id: roomId, name: r, capacity };
+                }
+                return { ...r, capacity };
+            }
+            return r;
+        }));
     };
 
     // Add subject to grade
     const addSubject = (gradeId) => {
+        const defaultRoomName = specialRooms[0] ? getRoomName(specialRooms[0]) : '';
         const newSubject = {
             id: uuidv4(),
             gradeId,
             name: '',
             modules: [{
                 id: uuidv4(),
-                location: specialRooms[0] || '',
+                location: defaultRoomName,
+                locations: defaultRoomName ? [defaultRoomName] : [],
                 weeklyHours: 2,
                 blockCount: 2,
-                hasBlock: false
+                hasBlock: false,
+                allowClassroomFallback: false
             }]
         };
         setSubjects(prev => [...prev, newSubject]);
@@ -137,16 +165,19 @@ export default function SettingsTab({
 
     // Add module to subject
     const addModule = (subjectId) => {
+        const defaultRoomName = specialRooms[0] ? getRoomName(specialRooms[0]) : '';
         setSubjects(prev => prev.map(s => {
             if (s.id === subjectId) {
                 return {
                     ...s,
                     modules: [...s.modules, {
                         id: uuidv4(),
-                        location: specialRooms[0] || '',
+                        location: defaultRoomName,
+                        locations: defaultRoomName ? [defaultRoomName] : [],
                         weeklyHours: 1,
                         blockCount: 2,
-                        hasBlock: false
+                        hasBlock: false,
+                        allowClassroomFallback: false
                     }]
                 };
             }
@@ -213,6 +244,54 @@ export default function SettingsTab({
         e.dataTransfer.effectAllowed = 'move';
     };
 
+    // Teacher management functions
+    const addTeacher = () => {
+        const newTeacher = {
+            id: uuidv4(),
+            name: '',
+            gradeId: grades[0]?.id || null,
+            subjectId: null,
+            assignedClasses: []  // Which classes this teacher handles
+        };
+        setTeachers(prev => [...prev, newTeacher]);
+    };
+
+    const removeTeacher = (teacherId) => {
+        setTeachers(prev => prev.filter(t => t.id !== teacherId));
+        // Also clear teacher references from subjects
+        setSubjects(prev => prev.map(s => ({
+            ...s,
+            modules: s.modules.map(m =>
+                m.teacherId === teacherId ? { ...m, teacherId: null } : m
+            )
+        })));
+    };
+
+    const updateTeacher = (teacherId, field, value) => {
+        setTeachers(prev => prev.map(t =>
+            t.id === teacherId ? { ...t, [field]: value } : t
+        ));
+    };
+
+    const toggleTeacherClass = (teacherId, classNum) => {
+        setTeachers(prev => prev.map(t => {
+            if (t.id === teacherId) {
+                const classes = t.assignedClasses || [];
+                if (classes.includes(classNum)) {
+                    return { ...t, assignedClasses: classes.filter(c => c !== classNum) };
+                } else {
+                    return { ...t, assignedClasses: [...classes, classNum].sort((a, b) => a - b) };
+                }
+            }
+            return t;
+        }));
+    };
+
+    // Get teachers for a specific subject
+    const getTeachersForSubject = (subjectId) => {
+        return teachers.filter(t => t.subjectId === subjectId);
+    };
+
     return (
         <div className="space-y-6 relative">
             {/* Special Rooms Section */}
@@ -220,22 +299,37 @@ export default function SettingsTab({
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                     <Settings className="w-5 h-5 text-indigo-500" />
                     특별실 관리
+                    <span className="text-xs font-normal text-gray-400 ml-1">정원 = 동시에 사용 가능한 학급 수</span>
                 </h3>
 
                 <div className="flex flex-wrap gap-2 mb-4">
                     {specialRooms.map(room => (
-                        <span
-                            key={room}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium"
+                        <div
+                            key={getRoomId(room)}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium"
                         >
-                            {room}
+                            <span>{getRoomName(room)}</span>
+                            <div className="flex items-center gap-1 border-l border-indigo-200 pl-2">
+                                <span className="text-xs text-indigo-500">정원</span>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="5"
+                                    value={getRoomCapacity(room)}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value, 10);
+                                        updateRoomCapacity(room, isNaN(val) ? 1 : Math.max(1, Math.min(5, val)));
+                                    }}
+                                    className="w-10 px-1 py-0.5 text-center border border-indigo-200 rounded text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                                />
+                            </div>
                             <button
                                 onClick={() => removeSpecialRoom(room)}
-                                className="ml-1 text-indigo-400 hover:text-red-500 transition-colors"
+                                className="text-indigo-400 hover:text-red-500 transition-colors"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                        </span>
+                        </div>
                     ))}
                 </div>
 
@@ -256,6 +350,107 @@ export default function SettingsTab({
                         추가
                     </button>
                 </div>
+            </div>
+
+            {/* Teacher Management Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <span className="text-purple-500">👩‍🏫</span>
+                        전담교사 관리
+                    </h3>
+                    <button
+                        onClick={addTeacher}
+                        className="px-3 py-1.5 text-sm bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-1"
+                    >
+                        <Plus className="w-4 h-4" />
+                        교사 추가
+                    </button>
+                </div>
+
+                {teachers.length === 0 ? (
+                    <p className="text-gray-400 text-center py-4">
+                        등록된 교사가 없습니다. 교사를 추가하면 시간표 충돌을 방지할 수 있습니다.
+                    </p>
+                ) : (
+                    <div className="space-y-3">
+                        {teachers.map(teacher => {
+                            const teacherGrade = grades.find(g => g.id === teacher.gradeId);
+                            const teacherSubject = subjects.find(s => s.id === teacher.subjectId);
+                            return (
+                                <div key={teacher.id} className="flex flex-wrap items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                                    {/* Teacher Name */}
+                                    <input
+                                        type="text"
+                                        value={teacher.name}
+                                        onChange={(e) => updateTeacher(teacher.id, 'name', e.target.value)}
+                                        placeholder="교사 이름"
+                                        className="px-3 py-1.5 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm w-24"
+                                    />
+
+                                    {/* Grade Selection */}
+                                    <select
+                                        value={teacher.gradeId || ''}
+                                        onChange={(e) => {
+                                            updateTeacher(teacher.id, 'gradeId', e.target.value);
+                                            updateTeacher(teacher.id, 'subjectId', null);
+                                            updateTeacher(teacher.id, 'assignedClasses', []);
+                                        }}
+                                        className="px-2 py-1.5 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm"
+                                    >
+                                        <option value="">학년 선택</option>
+                                        {grades.map(g => (
+                                            <option key={g.id} value={g.id}>{g.name}</option>
+                                        ))}
+                                    </select>
+
+                                    {/* Subject Selection (filtered by grade) */}
+                                    <select
+                                        value={teacher.subjectId || ''}
+                                        onChange={(e) => updateTeacher(teacher.id, 'subjectId', e.target.value)}
+                                        className="px-2 py-1.5 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm"
+                                        disabled={!teacher.gradeId}
+                                    >
+                                        <option value="">과목 선택</option>
+                                        {subjects.filter(s => s.gradeId === teacher.gradeId && s.name).map(s => (
+                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                        ))}
+                                    </select>
+
+                                    {/* Assigned Classes */}
+                                    {teacher.gradeId && teacherGrade && (
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-xs text-purple-600">담당:</span>
+                                            {Array.from({ length: teacherGrade.classCount }, (_, i) => i + 1).map(classNum => (
+                                                <button
+                                                    key={classNum}
+                                                    onClick={() => toggleTeacherClass(teacher.id, classNum)}
+                                                    className={`
+                                                        w-6 h-6 text-xs rounded-full font-medium transition-all
+                                                        ${(teacher.assignedClasses || []).includes(classNum)
+                                                            ? 'bg-purple-500 text-white'
+                                                            : 'bg-white border border-purple-300 text-purple-600 hover:bg-purple-100'
+                                                        }
+                                                    `}
+                                                >
+                                                    {classNum}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Delete Button */}
+                                    <button
+                                        onClick={() => removeTeacher(teacher.id)}
+                                        className="p-1.5 text-purple-400 hover:text-red-500 transition-colors ml-auto"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             {/* Grade Management Header */}
@@ -389,29 +584,80 @@ export default function SettingsTab({
                                         <div className="space-y-2">
                                             {subject.modules.map((module, moduleIdx) => (
                                                 <div key={module.id} className="flex flex-wrap items-center gap-2 p-2 bg-gray-50 rounded-lg text-sm">
-                                                    <select
-                                                        value={module.location}
-                                                        onChange={(e) => updateModule(subject.id, module.id, 'location', e.target.value)}
-                                                        className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                                                    >
-                                                        {specialRooms.map(room => (
-                                                            <option key={room} value={room}>{room}</option>
-                                                        ))}
-                                                    </select>
+                                                    {/* Multiple location selector */}
+                                                    <div className="relative group">
+                                                        <button
+                                                            type="button"
+                                                            className="px-2 py-1 border border-gray-300 rounded bg-white hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none min-w-24 text-left flex items-center gap-1"
+                                                        >
+                                                            <span className="truncate">
+                                                                {(module.locations && module.locations.length > 0)
+                                                                    ? (module.locations.length === 1
+                                                                        ? module.locations[0]
+                                                                        : `${module.locations[0]} 외 ${module.locations.length - 1}`)
+                                                                    : (module.location || '선택')}
+                                                            </span>
+                                                            <span className="text-gray-400">▼</span>
+                                                        </button>
+                                                        <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-40 hidden group-hover:block">
+                                                            <div className="p-2 space-y-1 max-h-48 overflow-y-auto">
+                                                                {specialRooms.map(room => {
+                                                                    const roomName = getRoomName(room);
+                                                                    const roomCapacity = getRoomCapacity(room);
+                                                                    const currentLocations = module.locations || (module.location ? [module.location] : []);
+                                                                    const isSelected = currentLocations.includes(roomName);
+                                                                    return (
+                                                                        <label
+                                                                            key={getRoomId(room)}
+                                                                            className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 rounded cursor-pointer"
+                                                                        >
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={isSelected}
+                                                                                onChange={(e) => {
+                                                                                    let newLocations;
+                                                                                    if (e.target.checked) {
+                                                                                        newLocations = [...currentLocations, roomName];
+                                                                                    } else {
+                                                                                        newLocations = currentLocations.filter(l => l !== roomName);
+                                                                                    }
+                                                                                    // Ensure at least one location
+                                                                                    if (newLocations.length === 0) {
+                                                                                        newLocations = [roomName];
+                                                                                    }
+                                                                                    updateModule(subject.id, module.id, 'locations', newLocations);
+                                                                                    // Also update legacy location field
+                                                                                    updateModule(subject.id, module.id, 'location', newLocations[0]);
+                                                                                }}
+                                                                                className="w-4 h-4 text-indigo-500 rounded focus:ring-indigo-500"
+                                                                            />
+                                                                            <span className={isSelected ? 'font-medium text-indigo-700' : 'text-gray-700'}>
+                                                                                {roomName}
+                                                                                {roomCapacity > 1 && (
+                                                                                    <span className="ml-1 text-xs text-gray-400">({roomCapacity}학급)</span>
+                                                                                )}
+                                                                            </span>
+                                                                        </label>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
-                                                    {/* Weekly Hours - FIX: Proper parseInt */}
+                                                    {/* Weekly Hours - Supports 0.5 increments */}
                                                     <div className="flex items-center gap-1">
                                                         <input
                                                             type="number"
-                                                            min="1"
+                                                            min="0.5"
                                                             max="10"
-                                                            value={module.weeklyHours.toString()}
+                                                            step="0.5"
+                                                            value={module.weeklyHours}
                                                             onChange={(e) => {
-                                                                const parsed = parseInt(e.target.value, 10);
-                                                                const val = isNaN(parsed) ? 1 : Math.max(1, Math.min(10, parsed));
+                                                                const parsed = parseFloat(e.target.value);
+                                                                const val = isNaN(parsed) ? 1 : Math.max(0.5, Math.min(10, Math.round(parsed * 2) / 2));
                                                                 updateModule(subject.id, module.id, 'weeklyHours', val);
                                                             }}
-                                                            className="w-14 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-center"
+                                                            className="w-16 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-center"
                                                         />
                                                         <span className="text-gray-500">시수</span>
                                                     </div>
@@ -424,6 +670,16 @@ export default function SettingsTab({
                                                             className="w-4 h-4 text-indigo-500 rounded focus:ring-indigo-500"
                                                         />
                                                         <span className="text-gray-600">블록</span>
+                                                    </label>
+
+                                                    <label className="flex items-center gap-1 cursor-pointer" title="특별실 부족 시 교실에서 수업 가능">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={module.allowClassroomFallback || false}
+                                                            onChange={(e) => updateModule(subject.id, module.id, 'allowClassroomFallback', e.target.checked)}
+                                                            className="w-4 h-4 text-amber-500 rounded focus:ring-amber-500"
+                                                        />
+                                                        <span className="text-amber-700">교실허용</span>
                                                     </label>
 
                                                     {module.hasBlock && (

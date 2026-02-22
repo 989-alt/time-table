@@ -66,3 +66,7 @@ body {
 .subject-default {
   @apply bg-gray-100 border-gray-300 text-gray-800;
 }
+
+.subject-classroom {
+  @apply bg-amber-50 border-amber-400 text-amber-800 border-dashed;
+}
