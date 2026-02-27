@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Custom utilities for the scheduler application */
+/* Theme */
 :root {
   --primary: #4f46e5;
   --primary-light: #818cf8;
@@ -40,6 +40,62 @@ body {
 /* Animation for hover effects */
 .card-hover {
   @apply transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5;
+}
+
+/* Toast animations */
+@keyframes toast-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toast-fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+.toast-enter {
+  animation: toast-slide-up 0.3s ease-out forwards;
+}
+
+.toast-exit {
+  animation: toast-fade-out 0.2s ease-in forwards;
+}
+
+/* Modal overlay animation */
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-overlay {
+  animation: modal-fade-in 0.15s ease-out forwards;
+}
+
+.modal-card {
+  animation: modal-scale-in 0.2s ease-out forwards;
 }
 
 /* Subject color classes */

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Settings, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Settings, AlertTriangle, UserCheck } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 const DAYS_KR = ['월', '화', '수', '목', '금'];
@@ -11,14 +11,15 @@ export default function SettingsTab({
     setSubjects,
     specialRooms,
     setSpecialRooms,
-    assignments,
     setAssignments,
     teachers = [],
-    setTeachers = () => {}
+    setTeachers = () => {},
+    addToast = () => {},
+    showConfirm = () => {},
+    closeConfirm = () => {}
 }) {
     // Removed expandedGrade state - all grade cards are now always expanded
     const [newRoom, setNewRoom] = useState('');
-    const [dragOverTrash, setDragOverTrash] = useState(false);
 
     // Update grade class count - FIX: Proper parseInt to avoid '03' issue
     const updateClassCount = (gradeId, value) => {
@@ -55,19 +56,18 @@ export default function SettingsTab({
         const grade = grades.find(g => g.id === gradeId);
         if (!grade) return;
 
-        const confirmMsg = `"${grade.name}"을(를) 삭제하시겠습니까?\n\n⚠️ 이 학년의 모든 과목과 시간표 배정이 함께 삭제됩니다.`;
-        if (!confirm(confirmMsg)) return;
-
-        // Remove grade
-        setGrades(prev => prev.filter(g => g.id !== gradeId));
-
-        // Remove associated subjects
-        setSubjects(prev => prev.filter(s => s.gradeId !== gradeId));
-
-        // Remove associated assignments
-        setAssignments(prev => prev.filter(a => a.gradeId !== gradeId));
-
-        // Grade cards are now always expanded - no state to clear
+        showConfirm(
+            '학년 삭제',
+            `"${grade.name}"을(를) 삭제하시겠습니까?\n\n이 학년의 모든 과목과 시간표 배정이 함께 삭제됩니다.`,
+            () => {
+                setGrades(prev => prev.filter(g => g.id !== gradeId));
+                setSubjects(prev => prev.filter(s => s.gradeId !== gradeId));
+                setAssignments(prev => prev.filter(a => a.gradeId !== gradeId));
+                closeConfirm();
+                addToast(`${grade.name}이(가) 삭제되었습니다.`, 'success');
+            },
+            true
+        );
     };
 
     // Add new grade
@@ -213,30 +213,6 @@ export default function SettingsTab({
         }));
     };
 
-    // Drag handlers for global trash bin
-    const handleTrashDragOver = (e) => {
-        e.preventDefault();
-        setDragOverTrash(true);
-    };
-
-    const handleTrashDragLeave = () => {
-        setDragOverTrash(false);
-    };
-
-    const handleTrashDrop = (e) => {
-        e.preventDefault();
-        setDragOverTrash(false);
-
-        const dataType = e.dataTransfer.getData('type');
-        const dataId = e.dataTransfer.getData('id');
-
-        if (dataType === 'grade') {
-            deleteGrade(dataId);
-        } else if (dataType === 'subject') {
-            removeSubject(dataId);
-        }
-    };
-
     // Grade card drag handlers
     const handleGradeDragStart = (e, gradeId) => {
         e.dataTransfer.setData('type', 'grade');
@@ -287,11 +263,6 @@ export default function SettingsTab({
         }));
     };
 
-    // Get teachers for a specific subject
-    const getTeachersForSubject = (subjectId) => {
-        return teachers.filter(t => t.subjectId === subjectId);
-    };
-
     return (
         <div className="space-y-6 relative">
             {/* Special Rooms Section */}
@@ -326,6 +297,7 @@ export default function SettingsTab({
                             <button
                                 onClick={() => removeSpecialRoom(room)}
                                 className="text-indigo-400 hover:text-red-500 transition-colors"
+                                aria-label={`${getRoomName(room)} 삭제`}
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -356,7 +328,7 @@ export default function SettingsTab({
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <span className="text-purple-500">👩‍🏫</span>
+                        <UserCheck className="w-5 h-5 text-purple-500" />
                         전담교사 관리
                     </h3>
                     <button
@@ -376,7 +348,6 @@ export default function SettingsTab({
                     <div className="space-y-3">
                         {teachers.map(teacher => {
                             const teacherGrade = grades.find(g => g.id === teacher.gradeId);
-                            const teacherSubject = subjects.find(s => s.id === teacher.subjectId);
                             return (
                                 <div key={teacher.id} className="flex flex-wrap items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
                                     {/* Teacher Name */}
@@ -443,6 +414,7 @@ export default function SettingsTab({
                                     <button
                                         onClick={() => removeTeacher(teacher.id)}
                                         className="p-1.5 text-purple-400 hover:text-red-500 transition-colors ml-auto"
+                                        aria-label="교사 삭제"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
@@ -492,6 +464,7 @@ export default function SettingsTab({
                                     }}
                                     className="p-2 rounded-lg bg-white/20 hover:bg-red-500 transition-colors group"
                                     title="학년 삭제"
+                                    aria-label={`${grade.name} 삭제`}
                                 >
                                     <Trash2 className="w-4 h-4 text-white group-hover:text-white" />
                                 </button>
@@ -575,6 +548,7 @@ export default function SettingsTab({
                                             <button
                                                 onClick={() => removeSubject(subject.id)}
                                                 className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                                                aria-label="과목 삭제"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
@@ -582,7 +556,7 @@ export default function SettingsTab({
 
                                         {/* Modules */}
                                         <div className="space-y-2">
-                                            {subject.modules.map((module, moduleIdx) => (
+                                            {subject.modules.map((module) => (
                                                 <div key={module.id} className="flex flex-wrap items-center gap-2 p-2 bg-gray-50 rounded-lg text-sm">
                                                     {/* Multiple location selector */}
                                                     <div className="relative group">
@@ -704,6 +678,7 @@ export default function SettingsTab({
                                                         <button
                                                             onClick={() => removeModule(subject.id, module.id)}
                                                             className="p-1 text-gray-400 hover:text-red-500 transition-colors ml-auto"
+                                                            aria-label="모듈 삭제"
                                                         >
                                                             <Trash2 className="w-3.5 h-3.5" />
                                                         </button>

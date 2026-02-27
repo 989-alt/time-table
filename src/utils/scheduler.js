@@ -159,17 +159,17 @@ export function generateRoundRobinQueue(units) {
     // Group units by gradeId-classId
     const grouped = {};
     units.forEach(unit => {
-        const key = `${unit.gradeId}-${unit.classId}`;
+        const key = `${unit.gradeId}::${unit.classId}`;
         if (!grouped[key]) grouped[key] = [];
         grouped[key].push(unit);
     });
 
     const queue = [];
     const keys = Object.keys(grouped).sort((a, b) => {
-        const [gradeA, classA] = a.split('-').map(Number);
-        const [gradeB, classB] = b.split('-').map(Number);
-        if (gradeA !== gradeB) return gradeA - gradeB;
-        return classA - classB;
+        const [gradeA, classA] = a.split('::');
+        const [gradeB, classB] = b.split('::');
+        if (gradeA !== gradeB) return gradeA.localeCompare(gradeB);
+        return Number(classA) - Number(classB);
     });
 
     // Round-robin interleaving
@@ -270,37 +270,10 @@ function areConsecutiveSlotsValid(day, startPeriod, size, unit, assignments, gra
         const period = startPeriod + i;
         if (period > 6) return false;
 
-        // For block validation, temporarily treat as non-block for individual slot checks
-        const tempUnit = { ...unit, isBlock: false };
-        if (i === 0) {
-            // First slot - check normally but ignore same-subject-same-day for blocks
-            const classConflict = assignments.some(a =>
-                a.gradeId === unit.gradeId &&
-                a.classId === unit.classId &&
-                a.day === day &&
-                a.period === period
-            );
-            if (classConflict) return false;
-
-            // Skip room conflict check for '교실'
-            if (unit.moduleLocation !== '교실') {
-                // Find room capacity
-                const roomInfo = specialRooms.find(r =>
-                    (typeof r === 'string' ? r : r.name) === unit.moduleLocation
-                );
-                const capacity = (roomInfo && typeof roomInfo === 'object') ? (roomInfo.capacity || 1) : 1;
-
-                const roomUsageCount = assignments.filter(a =>
-                    a.moduleLocation === unit.moduleLocation &&
-                    a.day === day &&
-                    a.period === period
-                ).length;
-
-                if (roomUsageCount >= capacity) return false;
-            }
-        } else {
-            if (!isSlotValid(day, period, tempUnit, assignments, grades, specialRooms)) return false;
-        }
+        // All slots use isSlotValid for full validation (class, room, teacher, daily max)
+        // isBlock=true ensures same-subject-same-day check is skipped for blocks
+        const tempUnit = { ...unit, isBlock: true };
+        if (!isSlotValid(day, period, tempUnit, assignments, grades, specialRooms)) return false;
     }
     return true;
 }
@@ -553,7 +526,7 @@ export function validateAssignments(assignments, grades = [], specialRooms = [])
     // Check for class overlaps (same class, same time)
     const classSlots = {};
     assignments.forEach(a => {
-        const key = `${a.gradeId}-${a.classId}-${a.day}-${a.period}`;
+        const key = `${a.gradeId}::${a.classId}::${a.day}::${a.period}`;
         if (classSlots[key]) {
             const gradeName = getGradeName(a);
             conflicts.push({
@@ -576,14 +549,14 @@ export function validateAssignments(assignments, grades = [], specialRooms = [])
         // Skip classroom (virtual room with unlimited capacity)
         if (a.moduleLocation === '교실') return;
 
-        const key = `${a.moduleLocation}-${a.day}-${a.period}`;
+        const key = `${a.moduleLocation}::${a.day}::${a.period}`;
         if (!roomSlots[key]) {
             roomSlots[key] = [];
         }
         roomSlots[key].push(a);
     });
 
-    Object.entries(roomSlots).forEach(([key, items]) => {
+    Object.values(roomSlots).forEach((items) => {
         // Find room capacity (default: 1)
         const roomName = items[0].moduleLocation;
         const roomInfo = specialRooms.find(r =>
@@ -592,7 +565,6 @@ export function validateAssignments(assignments, grades = [], specialRooms = [])
         const capacity = (roomInfo && typeof roomInfo === 'object') ? (roomInfo.capacity || 1) : 1;
 
         if (items.length > capacity) {
-            const gradeName = getGradeName(items[0]);
             conflicts.push({
                 type: capacity > 1 ? CONFLICT_TYPES.ROOM_CAPACITY_EXCEEDED : CONFLICT_TYPES.ROOM_OVERLAP,
                 message: capacity > 1
@@ -610,7 +582,7 @@ export function validateAssignments(assignments, grades = [], specialRooms = [])
     const teacherSlots = {};
     assignments.forEach(a => {
         if (!a.teacherId) return;
-        const key = `${a.teacherId}-${a.day}-${a.period}`;
+        const key = `${a.teacherId}::${a.day}::${a.period}`;
         if (teacherSlots[key]) {
             const existing = teacherSlots[key];
             if (existing.gradeId !== a.gradeId || existing.classId !== a.classId) {
@@ -632,7 +604,7 @@ export function validateAssignments(assignments, grades = [], specialRooms = [])
     if (grades.length > 0) {
         const gradeClassDayCounts = {};
         assignments.forEach(a => {
-            const key = `${a.gradeId}-${a.classId}-${a.day}`;
+            const key = `${a.gradeId}::${a.classId}::${a.day}`;
             if (!gradeClassDayCounts[key]) {
                 gradeClassDayCounts[key] = { assignments: [], maxPeriod: 0 };
             }
@@ -643,7 +615,7 @@ export function validateAssignments(assignments, grades = [], specialRooms = [])
         });
 
         Object.entries(gradeClassDayCounts).forEach(([key, data]) => {
-            const [gradeId, classId, day] = key.split('-');
+            const [gradeId, classId, day] = key.split('::');
             const grade = grades.find(g => g.id === gradeId);
             if (grade) {
                 const dayIndex = DAYS.indexOf(day);
@@ -666,14 +638,14 @@ export function validateAssignments(assignments, grades = [], specialRooms = [])
     // Check for same subject on same day (non-consecutive / non-block)
     const subjectDays = {};
     assignments.forEach(a => {
-        const key = `${a.gradeId}-${a.classId}-${a.subjectName}-${a.day}`;
+        const key = `${a.gradeId}::${a.classId}::${a.subjectName}::${a.day}`;
         if (!subjectDays[key]) {
             subjectDays[key] = [];
         }
         subjectDays[key].push(a);
     });
 
-    Object.entries(subjectDays).forEach(([key, items]) => {
+    Object.values(subjectDays).forEach((items) => {
         if (items.length > 1) {
             // Check if they are consecutive (allowed for blocks)
             items.sort((a, b) => a.period - b.period);

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Play, CheckCircle, AlertTriangle, Trash2, Sun } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight, Play, CheckCircle, AlertTriangle, Trash2, Sun, XCircle, MousePointerClick } from 'lucide-react';
 import TimetableGrid from './TimetableGrid';
 import { runAutoScheduler, validateAssignments, CONFLICT_TYPES, CONFLICT_LABELS } from '../utils/scheduler';
 
@@ -9,23 +9,21 @@ export default function GradeViewTab({
     assignments,
     setAssignments,
     specialRooms = [],
-    teachers = []
+    teachers = [],
+    addToast = () => {},
+    showConfirm = () => {},
+    closeConfirm = () => {}
 }) {
-    // Use first available grade as default
-    const [selectedGradeId, setSelectedGradeId] = useState(grades[0]?.id || null);
+    // Use first available grade as default; auto-fallback if selected grade is deleted
+    const [rawSelectedGradeId, setSelectedGradeId] = useState(grades[0]?.id || null);
+    const selectedGradeId = grades.find(g => g.id === rawSelectedGradeId)
+        ? rawSelectedGradeId
+        : (grades[0]?.id || null);
     const [selectedClass, setSelectedClass] = useState(1);
     const [showResult, setShowResult] = useState(null);
     const [conflicts, setConflicts] = useState([]);
     const [morningPriority, setMorningPriority] = useState(true);
     const [dragOverTrash, setDragOverTrash] = useState(false);
-
-    // Update selected grade if current one is deleted
-    useEffect(() => {
-        if (grades.length > 0 && !grades.find(g => g.id === selectedGradeId)) {
-            setSelectedGradeId(grades[0].id);
-            setSelectedClass(1);
-        }
-    }, [grades, selectedGradeId]);
 
     const currentGrade = grades.find(g => g.id === selectedGradeId);
     const currentGradeIndex = grades.findIndex(g => g.id === selectedGradeId);
@@ -59,14 +57,14 @@ export default function GradeViewTab({
     // Run auto scheduler for single grade
     const handleAutoSchedule = () => {
         if (!currentGrade) {
-            alert('선택된 학년이 없습니다.');
+            addToast('선택된 학년이 없습니다.', 'warning');
             return;
         }
 
         const gradeSubjects = subjects.filter(s => s.gradeId === selectedGradeId && s.name.trim());
 
         if (gradeSubjects.length === 0) {
-            alert('배정할 과목이 없습니다. 기본 설정에서 과목을 추가해주세요.');
+            addToast('배정할 과목이 없습니다. 기본 설정에서 과목을 추가해주세요.', 'warning');
             return;
         }
 
@@ -86,7 +84,7 @@ export default function GradeViewTab({
         const allSubjects = subjects.filter(s => s.name.trim());
 
         if (allSubjects.length === 0) {
-            alert('배정할 과목이 없습니다. 기본 설정에서 과목을 추가해주세요.');
+            addToast('배정할 과목이 없습니다. 기본 설정에서 과목을 추가해주세요.', 'warning');
             return;
         }
 
@@ -104,7 +102,7 @@ export default function GradeViewTab({
         setConflicts(foundConflicts);
 
         if (foundConflicts.length === 0) {
-            alert('✅ 시간표에 충돌이 없습니다!');
+            addToast('시간표에 충돌이 없습니다!', 'success');
         }
     };
 
@@ -131,9 +129,16 @@ export default function GradeViewTab({
     // Clear all assignments for current grade
     const handleClearGrade = () => {
         if (!currentGrade) return;
-        if (confirm(`${currentGrade.name} 시간표를 모두 삭제하시겠습니까?`)) {
-            setAssignments(prev => prev.filter(a => a.gradeId !== selectedGradeId));
-        }
+        showConfirm(
+            '학년 시간표 삭제',
+            `${currentGrade.name} 시간표를 모두 삭제하시겠습니까?`,
+            () => {
+                setAssignments(prev => prev.filter(a => a.gradeId !== selectedGradeId));
+                closeConfirm();
+                addToast(`${currentGrade.name} 시간표가 삭제되었습니다.`, 'success');
+            },
+            true
+        );
     };
 
     // Convert conflicts to cell markers
@@ -194,6 +199,7 @@ export default function GradeViewTab({
                             <button
                                 onClick={prevClass}
                                 className="p-1.5 rounded hover:bg-gray-200 transition-colors"
+                                aria-label="이전 반"
                             >
                                 <ChevronLeft className="w-5 h-5 text-gray-600" />
                             </button>
@@ -203,6 +209,7 @@ export default function GradeViewTab({
                             <button
                                 onClick={nextClass}
                                 className="p-1.5 rounded hover:bg-gray-200 transition-colors"
+                                aria-label="다음 반"
                             >
                                 <ChevronRight className="w-5 h-5 text-gray-600" />
                             </button>
@@ -253,6 +260,10 @@ export default function GradeViewTab({
                             onDragLeave={handleTrashDragLeave}
                             onDrop={handleTrashDrop}
                             onClick={handleClearGrade}
+                            role="button"
+                            tabIndex={0}
+                            aria-label="드래그하여 삭제 또는 클릭하여 학년 전체 삭제"
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClearGrade(); }}
                             className={`
                 p-3 rounded-lg border-2 border-dashed cursor-pointer transition-all
                 ${dragOverTrash
@@ -288,17 +299,19 @@ export default function GradeViewTab({
                             </span>
                         </div>
 
-                        {/* Detailed failure list - FIX for vague failure report */}
+                        {/* Detailed failure list */}
                         {showResult.failedUnits && showResult.failedUnits.length > 0 && (
                             <div className="mt-2 pt-2 border-t border-yellow-300">
-                                <p className="text-xs font-semibold mb-1">❌ 배정 실패 상세:</p>
+                                <p className="text-xs font-semibold mb-1 flex items-center gap-1">
+                                    <XCircle className="w-3.5 h-3.5" />
+                                    배정 실패 상세:
+                                </p>
                                 <ul className="text-xs space-y-0.5 max-h-24 overflow-y-auto">
                                     {showResult.failedUnits.map((failed, idx) => {
-                                        // Format: "6-1 과학" using gradeName
                                         const gradeNum = failed.gradeName ? failed.gradeName.replace('학년', '').trim() : '?';
                                         return (
                                             <li key={idx}>
-                                                • {gradeNum}-{failed.classId} {failed.subjectName}
+                                                &bull; {gradeNum}-{failed.classId} {failed.subjectName}
                                             </li>
                                         );
                                     })}
@@ -320,7 +333,6 @@ export default function GradeViewTab({
                                 <div
                                     key={idx}
                                     onClick={() => {
-                                        // Navigate to the conflicting cell
                                         if (conflict.gradeId && conflict.classId) {
                                             setSelectedGradeId(conflict.gradeId);
                                             setSelectedClass(conflict.classId);
@@ -352,7 +364,8 @@ export default function GradeViewTab({
                                     </div>
                                     {conflict.gradeId && (
                                         <div className="mt-1 text-xs text-gray-500 flex items-center gap-1">
-                                            <span>👆 클릭하여 이동</span>
+                                            <MousePointerClick className="w-3 h-3" />
+                                            <span>클릭하여 이동</span>
                                         </div>
                                     )}
                                 </div>

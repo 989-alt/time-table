@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1771754838368,
+  "lastScanned": 1772171199531,
   "projectRoot": "C:\\Users\\hit\\Desktop\\바이브코딩 공모전\\time-table",
   "techStack": {
     "languages": [
@@ -65,11 +65,21 @@
   },
   "customNotes": [],
   "directoryMap": {
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 2,
+      "lastAccessed": 1772171199496,
+      "keyFiles": [
+        "index.html",
+        "vite.svg"
+      ]
+    },
     "public": {
       "path": "public",
       "purpose": "Public files",
       "fileCount": 1,
-      "lastAccessed": 1771754838323,
+      "lastAccessed": 1772171199497,
       "keyFiles": [
         "vite.svg"
       ]
@@ -78,18 +88,28 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 3,
-      "lastAccessed": 1771754838332,
+      "lastAccessed": 1772171199506,
       "keyFiles": [
         "App.jsx",
         "index.css",
         "main.jsx"
       ]
     },
+    "dist\\assets": {
+      "path": "dist\\assets",
+      "purpose": "Static assets",
+      "fileCount": 2,
+      "lastAccessed": 1772171199507,
+      "keyFiles": [
+        "index-Bt7w7Ukz.js",
+        "index-Cfbc2Ryi.css"
+      ]
+    },
     "src\\assets": {
       "path": "src\\assets",
       "purpose": "Static assets",
       "fileCount": 1,
-      "lastAccessed": 1771754838333,
+      "lastAccessed": 1772171199508,
       "keyFiles": [
         "react.svg"
       ]
@@ -98,7 +118,7 @@
       "path": "src\\components",
       "purpose": "UI components",
       "fileCount": 4,
-      "lastAccessed": 1771754838333,
+      "lastAccessed": 1772171199509,
       "keyFiles": [
         "GradeViewTab.jsx",
         "RoomViewTab.jsx",
@@ -109,7 +129,7 @@
       "path": "src\\utils",
       "purpose": "Utility functions",
       "fileCount": 2,
-      "lastAccessed": 1771754838334,
+      "lastAccessed": 1772171199509,
       "keyFiles": [
         "excelExport.js",
         "scheduler.js"
@@ -119,75 +139,117 @@
   "hotPaths": [
     {
       "path": "src\\utils\\scheduler.js",
-      "accessCount": 24,
-      "lastAccessed": 1771756839017,
+      "accessCount": 22,
+      "lastAccessed": 1772172443603,
       "type": "file"
     },
     {
       "path": "src\\components\\SettingsTab.jsx",
-      "accessCount": 16,
-      "lastAccessed": 1771756773758,
+      "accessCount": 20,
+      "lastAccessed": 1772189463732,
       "type": "file"
     },
     {
-      "path": "src\\components\\GradeViewTab.jsx",
-      "accessCount": 14,
-      "lastAccessed": 1771756726151,
+      "path": "src\\components\\TimetableGrid.jsx",
+      "accessCount": 12,
+      "lastAccessed": 1772189581415,
       "type": "file"
     },
     {
       "path": "src\\App.jsx",
       "accessCount": 9,
-      "lastAccessed": 1771756734754,
+      "lastAccessed": 1772189402397,
       "type": "file"
     },
     {
-      "path": "src\\components\\TimetableGrid.jsx",
-      "accessCount": 8,
-      "lastAccessed": 1771756869978,
-      "type": "file"
-    },
-    {
-      "path": "src\\utils\\excelExport.js",
+      "path": "src\\components\\GradeViewTab.jsx",
       "accessCount": 7,
-      "lastAccessed": 1771756912778,
+      "lastAccessed": 1772189531036,
       "type": "file"
     },
     {
-      "path": "src\\components\\RoomViewTab.jsx",
-      "accessCount": 5,
-      "lastAccessed": 1771756494340,
+      "path": "index.html",
+      "accessCount": 4,
+      "lastAccessed": 1772189324643,
       "type": "file"
     },
     {
       "path": "src\\index.css",
       "accessCount": 4,
-      "lastAccessed": 1771756359681,
+      "lastAccessed": 1772189338090,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 2,
+      "lastAccessed": 1772171708286,
+      "type": "directory"
+    },
+    {
+      "path": "src",
+      "accessCount": 2,
+      "lastAccessed": 1772172437130,
+      "type": "directory"
+    },
+    {
+      "path": "src\\main.jsx",
+      "accessCount": 2,
+      "lastAccessed": 1772172440952,
+      "type": "file"
+    },
+    {
+      "path": "src\\components\\RoomViewTab.jsx",
+      "accessCount": 2,
+      "lastAccessed": 1772172442823,
+      "type": "file"
+    },
+    {
+      "path": "src\\utils\\excelExport.js",
+      "accessCount": 2,
+      "lastAccessed": 1772172443837,
       "type": "file"
     },
     {
       "path": "package.json",
-      "accessCount": 2,
-      "lastAccessed": 1771755421851,
+      "accessCount": 1,
+      "lastAccessed": 1772171711268,
       "type": "file"
     },
     {
-      "path": "src\\main.jsx",
+      "path": "vite.config.js",
       "accessCount": 1,
-      "lastAccessed": 1771755289297,
+      "lastAccessed": 1772171711727,
       "type": "file"
     },
     {
       "path": "README.md",
       "accessCount": 1,
-      "lastAccessed": 1771755297770,
+      "lastAccessed": 1772171712228,
       "type": "file"
     },
     {
-      "path": "",
+      "path": "eslint.config.js",
       "accessCount": 1,
-      "lastAccessed": 1771755414580,
-      "type": "directory"
+      "lastAccessed": 1772171712632,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 1,
+      "lastAccessed": 1772171759405,
+      "type": "file"
+    },
+    {
+      "path": "src\\components\\Toast.jsx",
+      "accessCount": 1,
+      "lastAccessed": 1772189352793,
+      "type": "file"
+    },
+    {
+      "path": "src\\components\\ConfirmModal.jsx",
+      "accessCount": 1,
+      "lastAccessed": 1772189362004,
+      "type": "file"
     }
   ],
   "userDirectives": []

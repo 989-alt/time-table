@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { School, AlertTriangle } from 'lucide-react';
 import { DAYS, PERIODS, getSubjectColorClass, CONFLICT_TYPES } from '../utils/scheduler';
 
 export default function TimetableGrid({
@@ -8,7 +9,6 @@ export default function TimetableGrid({
     classId,
     dailyMaxHours,
     conflictCells = [],
-    showAllGrades = false,
     filterRoom = null,
     grades = []
 }) {
@@ -294,8 +294,9 @@ export default function TimetableGrid({
                                                 ${hoverConflict.type === CONFLICT_TYPES.DAILY_MAX_EXCEEDED ? 'bg-amber-500/85' : ''}
                                                 ${!hoverConflict.type ? 'bg-red-500/85' : ''}
                                             `}>
-                                                <span className="text-white text-xs font-bold text-center leading-tight">
-                                                    ⚠️ {hoverConflict.message || (
+                                                <span className="text-white text-xs font-bold text-center leading-tight flex items-center gap-0.5 justify-center">
+                                                    <AlertTriangle className="w-3 h-3 inline-block shrink-0" />
+                                                    {hoverConflict.message || (
                                                         hoverConflict.gradeClass
                                                             ? `${hoverConflict.gradeClass}이(가) ${hoverConflict.room}을 사용 중!`
                                                             : '충돌 발생'
@@ -335,6 +336,7 @@ export default function TimetableGrid({
                                                                 <button
                                                                     onClick={(e) => handleDelete(e, assignment.id)}
                                                                     className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white rounded-full text-[8px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                                                    aria-label="배정 삭제"
                                                                 >
                                                                     ×
                                                                 </button>
@@ -363,6 +365,7 @@ export default function TimetableGrid({
                                                                 <button
                                                                     onClick={(e) => handleDelete(e, assignment.id)}
                                                                     className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white rounded-full text-[8px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                                                    aria-label="배정 삭제"
                                                                 >
                                                                     ×
                                                                 </button>
@@ -388,7 +391,7 @@ export default function TimetableGrid({
                                                         >
                                                             <div className="font-semibold truncate flex items-center gap-0.5">
                                                                 {assignment.moduleLocation === '교실' && (
-                                                                    <span title="교실 수업">🏫</span>
+                                                                    <School className="w-3 h-3 inline-block" title="교실 수업" />
                                                                 )}
                                                                 {filterRoom ? formatGradeClass(assignment) : assignment.subjectName}
                                                             </div>
@@ -398,6 +401,7 @@ export default function TimetableGrid({
                                                             <button
                                                                 onClick={(e) => handleDelete(e, assignment.id)}
                                                                 className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow-sm hover:bg-red-600"
+                                                                aria-label="배정 삭제"
                                                             >
                                                                 ×
                                                             </button>
