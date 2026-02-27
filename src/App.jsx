@@ -97,13 +97,13 @@ export default function App() {
   ];
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
+    <div className="h-screen flex flex-col overflow-hidden bg-[#faf8f5]">
       {/* Header */}
-      <header className="flex-none bg-white shadow-sm z-10 border-b border-gray-200">
+      <header className="flex-none bg-white shadow-sm z-10 border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-2">
           {/* Logo & Title */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-700 rounded-xl flex items-center justify-center shadow-md">
               <Calendar className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -123,7 +123,7 @@ export default function App() {
                   className={`
                     px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2
                     ${activeTab === tab.id
-                      ? 'bg-white text-indigo-600 shadow-sm'
+                      ? 'bg-white text-teal-600 shadow-sm'
                       : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                     }
                   `}
@@ -203,7 +203,7 @@ export default function App() {
       </main>
 
       {/* Status Bar */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4 z-10">
+      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 py-2 px-4 z-10">
         <div className="max-w-7xl mx-auto flex items-center justify-between text-sm text-gray-500">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">

@@ -27,7 +27,7 @@ export default function RoomViewTab({
             {/* Room Selector */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-indigo-500" />
+                    <Building2 className="w-5 h-5 text-teal-500" />
                     특별실 선택
                 </h3>
 
@@ -42,7 +42,7 @@ export default function RoomViewTab({
                                 className={`
                                     px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2
                                     ${selectedRoom === roomName
-                                        ? 'bg-indigo-500 text-white shadow-md'
+                                        ? 'bg-teal-500 text-white shadow-md'
                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }
                                 `}
@@ -51,7 +51,7 @@ export default function RoomViewTab({
                                 {roomCapacity > 1 && (
                                     <span className={`
                                         text-xs
-                                        ${selectedRoom === roomName ? 'text-indigo-200' : 'text-gray-400'}
+                                        ${selectedRoom === roomName ? 'text-teal-200' : 'text-gray-400'}
                                     `}>
                                         (정원 {roomCapacity})
                                     </span>
@@ -59,7 +59,7 @@ export default function RoomViewTab({
                                 <span className={`
                                     px-2 py-0.5 rounded-full text-xs
                                     ${selectedRoom === roomName
-                                        ? 'bg-indigo-400 text-white'
+                                        ? 'bg-teal-400 text-white'
                                         : 'bg-gray-200 text-gray-600'
                                     }
                                 `}>

@@ -244,7 +244,7 @@ export default function TimetableGrid({
         <div className="overflow-x-auto">
             <table className="w-full border-collapse bg-white rounded-lg overflow-hidden shadow-sm">
                 <thead>
-                    <tr className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
+                    <tr className="bg-gradient-to-r from-teal-600 to-teal-500 text-white">
                         <th className="p-3 text-center font-semibold w-16">교시</th>
                         {DAYS.map((day) => (
                             <th key={day} className="p-3 text-center font-semibold min-w-32">
@@ -278,7 +278,7 @@ export default function TimetableGrid({
                                             p-1 text-center relative min-h-16 h-16 transition-all
                                             ${isDropTarget ? 'border-4 border-red-500 border-dashed bg-red-50' : 'border border-gray-200'}
                                             ${isConflict ? 'bg-red-100' : ''}
-                                            ${isDisabled ? 'bg-gray-100' : ''}
+                                            ${isDisabled ? 'bg-gray-100' : cellAssignments.length === 0 && !isConflict ? 'timetable-cell-empty' : ''}
                                         `}
                                         onDragOver={(e) => !isDisabled && handleDragOver(e, day, period)}
                                         onDragLeave={handleDragLeave}
@@ -386,7 +386,7 @@ export default function TimetableGrid({
                                                                 ${getSubjectColorClass(assignment.moduleLocation)}
                                                                 ${draggedItem?.id === assignment.id ? 'opacity-50 scale-95' : ''}
                                                                 ${isConflict ? 'ring-2 ring-red-500' : 'border'}
-                                                                ${assignment.isBlockPart ? 'border-l-4 border-l-indigo-500' : ''}
+                                                                ${assignment.isBlockPart ? 'border-l-4 border-l-teal-500' : ''}
                                                             `}
                                                         >
                                                             <div className="font-semibold truncate flex items-center gap-0.5">
@@ -427,7 +427,7 @@ export default function TimetableGrid({
                     오전 (1-4교시)
                 </span>
                 <span className="flex items-center gap-1">
-                    <span className="w-3 h-3 border-l-4 border-l-indigo-500 bg-gray-100 rounded"></span>
+                    <span className="w-3 h-3 border-l-4 border-l-teal-500 bg-gray-100 rounded"></span>
                     블록 수업
                 </span>
                 <span className="flex items-center gap-1">

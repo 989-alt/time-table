@@ -3,7 +3,8 @@
     "allow": [
       "WebFetch(domain:sites.google.com)",
       "Bash(npx vite build)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(set PYTHONIOENCODING=utf-8:*)"
     ]
   }
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Play, CheckCircle, AlertTriangle, Trash2, Sun, XCircle, MousePointerClick } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, CheckCircle, AlertTriangle, Trash2, Sun, XCircle, MousePointerClick, Calendar } from 'lucide-react';
 import TimetableGrid from './TimetableGrid';
 import { runAutoScheduler, validateAssignments, CONFLICT_TYPES, CONFLICT_LABELS } from '../utils/scheduler';
 
@@ -154,10 +154,23 @@ export default function GradeViewTab({
     // Show empty state if no grades
     if (grades.length === 0) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-                <AlertTriangle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">등록된 학년이 없습니다</h3>
-                <p className="text-gray-500">기본 설정 탭에서 학년을 추가해주세요.</p>
+            <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-12 text-center">
+                <Calendar className="w-16 h-16 text-stone-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-stone-600 mb-2">시간표를 만들어 보세요</h3>
+                <div className="text-stone-400 text-sm max-w-sm mx-auto space-y-2 mt-4">
+                    <p className="flex items-center gap-2 justify-center">
+                        <span className="w-6 h-6 rounded-full bg-teal-100 text-teal-600 text-xs font-bold flex items-center justify-center">1</span>
+                        기본 설정에서 학년과 과목을 추가
+                    </p>
+                    <p className="flex items-center gap-2 justify-center">
+                        <span className="w-6 h-6 rounded-full bg-teal-100 text-teal-600 text-xs font-bold flex items-center justify-center">2</span>
+                        이 탭에서 자동 배정을 실행
+                    </p>
+                    <p className="flex items-center gap-2 justify-center">
+                        <span className="w-6 h-6 rounded-full bg-teal-100 text-teal-600 text-xs font-bold flex items-center justify-center">3</span>
+                        드래그 앤 드롭으로 미세 조정
+                    </p>
+                </div>
             </div>
         );
     }
@@ -182,7 +195,7 @@ export default function GradeViewTab({
                                     className={`
                     px-3 py-2 rounded-lg text-sm font-medium transition-all
                     ${selectedGradeId === grade.id
-                                            ? 'bg-indigo-500 text-white shadow-md'
+                                            ? 'bg-teal-500 text-white shadow-md'
                                             : grade.classCount > 0
                                                 ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                 : 'bg-gray-50 text-gray-300 cursor-not-allowed'
@@ -241,7 +254,7 @@ export default function GradeViewTab({
                         </button>
                         <button
                             onClick={handleAutoScheduleAll}
-                            className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all shadow-sm flex items-center gap-2 font-medium"
+                            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-all shadow-sm flex items-center gap-2 font-medium"
                         >
                             <Play className="w-4 h-4" />
                             전체 자동 배정

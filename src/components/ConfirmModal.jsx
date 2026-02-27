@@ -72,7 +72,7 @@ export default function ConfirmModal({ open, title, message, onConfirm, onCancel
             className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
               danger
                 ? 'bg-red-500 hover:bg-red-600'
-                : 'bg-indigo-500 hover:bg-indigo-600'
+                : 'bg-teal-500 hover:bg-teal-600'
             }`}
           >
             {confirmText}

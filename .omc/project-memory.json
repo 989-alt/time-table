@@ -138,33 +138,45 @@
   },
   "hotPaths": [
     {
+      "path": "src\\components\\SettingsTab.jsx",
+      "accessCount": 36,
+      "lastAccessed": 1772190433571,
+      "type": "file"
+    },
+    {
       "path": "src\\utils\\scheduler.js",
       "accessCount": 22,
       "lastAccessed": 1772172443603,
       "type": "file"
     },
     {
-      "path": "src\\components\\SettingsTab.jsx",
-      "accessCount": 20,
-      "lastAccessed": 1772189463732,
-      "type": "file"
-    },
-    {
       "path": "src\\components\\TimetableGrid.jsx",
-      "accessCount": 12,
-      "lastAccessed": 1772189581415,
+      "accessCount": 16,
+      "lastAccessed": 1772190314460,
       "type": "file"
     },
     {
       "path": "src\\App.jsx",
-      "accessCount": 9,
-      "lastAccessed": 1772189402397,
+      "accessCount": 15,
+      "lastAccessed": 1772190287838,
       "type": "file"
     },
     {
       "path": "src\\components\\GradeViewTab.jsx",
+      "accessCount": 13,
+      "lastAccessed": 1772190483960,
+      "type": "file"
+    },
+    {
+      "path": "src\\components\\RoomViewTab.jsx",
       "accessCount": 7,
-      "lastAccessed": 1772189531036,
+      "lastAccessed": 1772190526487,
+      "type": "file"
+    },
+    {
+      "path": "src\\index.css",
+      "accessCount": 6,
+      "lastAccessed": 1772190190777,
       "type": "file"
     },
     {
@@ -174,9 +186,15 @@
       "type": "file"
     },
     {
-      "path": "src\\index.css",
-      "accessCount": 4,
-      "lastAccessed": 1772189338090,
+      "path": "src",
+      "accessCount": 3,
+      "lastAccessed": 1772190490680,
+      "type": "directory"
+    },
+    {
+      "path": "src\\components\\ConfirmModal.jsx",
+      "accessCount": 3,
+      "lastAccessed": 1772190497223,
       "type": "file"
     },
     {
@@ -186,27 +204,21 @@
       "type": "directory"
     },
     {
-      "path": "src",
-      "accessCount": 2,
-      "lastAccessed": 1772172437130,
-      "type": "directory"
-    },
-    {
       "path": "src\\main.jsx",
       "accessCount": 2,
       "lastAccessed": 1772172440952,
       "type": "file"
     },
     {
-      "path": "src\\components\\RoomViewTab.jsx",
-      "accessCount": 2,
-      "lastAccessed": 1772172442823,
-      "type": "file"
-    },
-    {
       "path": "src\\utils\\excelExport.js",
       "accessCount": 2,
       "lastAccessed": 1772172443837,
+      "type": "file"
+    },
+    {
+      "path": "src\\components\\Toast.jsx",
+      "accessCount": 2,
+      "lastAccessed": 1772190077372,
       "type": "file"
     },
     {
@@ -237,18 +249,6 @@
       "path": "CLAUDE.md",
       "accessCount": 1,
       "lastAccessed": 1772171759405,
-      "type": "file"
-    },
-    {
-      "path": "src\\components\\Toast.jsx",
-      "accessCount": 1,
-      "lastAccessed": 1772189352793,
-      "type": "file"
-    },
-    {
-      "path": "src\\components\\ConfirmModal.jsx",
-      "accessCount": 1,
-      "lastAccessed": 1772189362004,
       "type": "file"
     }
   ],
